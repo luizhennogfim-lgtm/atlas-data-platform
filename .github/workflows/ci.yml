@@ -60,7 +60,7 @@ jobs:
           ATLAS_DB_DSN: postgresql://atlas:atlas_ci_only@localhost:5432/atlas_test
         run: python -m pipeline.cli run --label ci_smoke
 
- dag-tests:
+  dag-tests:
     name: Airflow DAG structure tests
     runs-on: ubuntu-latest
     steps:
