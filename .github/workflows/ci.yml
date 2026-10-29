@@ -60,7 +60,7 @@ jobs:
           ATLAS_DB_DSN: postgresql://atlas:atlas_ci_only@localhost:5432/atlas_test
         run: python -m pipeline.cli run --label ci_smoke
 
-  dag-tests:
+ dag-tests:
     name: Airflow DAG structure tests
     runs-on: ubuntu-latest
     steps:
@@ -69,13 +69,14 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install Airflow with its official constraints
-         run: >
+        run: >
           pip install "apache-airflow==2.10.5" "psycopg[binary]==3.2.3" pytest
           --constraint https://raw.githubusercontent.com/apache/airflow/constraints-2.10.5/constraints-3.12.txt
       - run: airflow db migrate
-      - run: pytest -q tests/test_dag.py
+      - name: Run Airflow DAG structure tests
         env:
           AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+        run: pytest -q tests/test_dag.py
 
   docker:
     name: Docker Compose config and image build
