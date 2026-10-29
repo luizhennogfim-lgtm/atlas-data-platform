@@ -1,0 +1,66 @@
+# Local development stack: PostgreSQL + Airflow (LocalExecutor). Dev credentials only.
+x-atlas-env: &atlas-env
+  ATLAS_DB_DSN: postgresql://${POSTGRES_USER:-atlas}:${POSTGRES_PASSWORD:-atlas_dev_only}@postgres:5432/${POSTGRES_DB:-atlas}
+  ATLAS_SOURCE_DIR: /opt/atlas/data/sample
+  ATLAS_REPORTS_DIR: /opt/atlas/reports
+  AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER:-atlas}:${POSTGRES_PASSWORD:-atlas_dev_only}@postgres:5432/airflow
+  AIRFLOW__CORE__EXECUTOR: LocalExecutor
+
+x-airflow: &airflow
+  build: .
+  environment: *atlas-env
+  volumes:
+    - ./:/opt/atlas
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-atlas}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-atlas_dev_only}
+      POSTGRES_DB: ${POSTGRES_DB:-atlas}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./scripts/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-atlas} -d ${POSTGRES_DB:-atlas}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  airflow-init:
+    <<: *airflow
+    command: >
+      bash -c "airflow db migrate &&
+      airflow users create --username ${AIRFLOW_ADMIN_USER:-admin} --password ${AIRFLOW_ADMIN_PASSWORD:-admin_dev_only}
+      --firstname Atlas --lastname Admin --role Admin --email admin@example.com || true"
+    restart: "no"
+
+  airflow-webserver:
+    <<: *airflow
+    command: webserver
+    ports:
+      - "8080:8080"
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  airflow-scheduler:
+    <<: *airflow
+    command: scheduler
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:

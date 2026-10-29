@@ -1,0 +1,14 @@
+# Local development credentials only. Values come from environment variables
+# (the pipeline passes them from ATLAS_DB_DSN; see .env.example).
+atlas:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('ATLAS_DB_HOST', 'localhost') }}"
+      port: "{{ env_var('ATLAS_DB_PORT', '5432') | as_number }}"
+      user: "{{ env_var('ATLAS_DB_USER', 'atlas') }}"
+      password: "{{ env_var('ATLAS_DB_PASSWORD', '') }}"
+      dbname: "{{ env_var('ATLAS_DB_NAME', 'atlas') }}"
+      schema: public
+      threads: 2

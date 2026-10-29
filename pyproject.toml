@@ -1,0 +1,25 @@
+[project]
+name = "atlas-data-platform"
+version = "0.1.0"
+description = "Portfolio data platform: CSV -> Bronze/Silver/Gold on PostgreSQL with dbt, Airflow and data-quality gates"
+requires-python = ">=3.12"
+dependencies = ["psycopg[binary]==3.2.3"]
+
+[project.optional-dependencies]
+dev = ["pytest==9.2.0", "ruff==0.17.3", "dbt-core==1.11.16", "dbt-postgres==1.11.0"]
+aws = ["boto3==1.35.99"]  # optional S3 export; never required
+
+[tool.setuptools]
+packages = ["ingestion", "quality", "pipeline"]
+
+[tool.ruff]
+line-length = 140
+target-version = "py312"
+extend-exclude = ["reports"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

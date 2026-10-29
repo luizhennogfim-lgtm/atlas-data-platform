@@ -1,0 +1,33 @@
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# Tests and lint
+.pytest_cache/
+.ruff_cache/
+
+# IDE
+.idea/
+
+# Generated reports
+reports/*
+!reports/.gitkeep
+
+# dbt generated files
+transformations/dbt_project/target/
+transformations/dbt_project/logs/
+transformations/dbt_project/dbt_packages/
+
+# Logs and operating system files
+logs/
+*.log
+.DS_Store
+Thumbs.db

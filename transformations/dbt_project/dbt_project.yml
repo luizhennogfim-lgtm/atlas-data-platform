@@ -1,0 +1,24 @@
+name: atlas
+version: "1.0.0"
+config-version: 2
+profile: atlas
+
+model-paths: ["models"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+
+vars:
+  # Schema that receives the Gold tables. The pipeline builds into "gold_candidate",
+  # tests it, and only then swaps it into "gold" (see pipeline/steps.py::publish_gold).
+  gold_schema: gold
+
+models:
+  atlas:
+    silver:
+      +schema: silver
+      +materialized: table
+      +tags: ["silver"]
+    gold:
+      +schema: "{{ var('gold_schema', 'gold') }}"
+      +materialized: table
+      +tags: ["gold"]

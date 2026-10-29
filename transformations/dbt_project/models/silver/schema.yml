@@ -1,0 +1,92 @@
+version: 2
+
+sources:
+  - name: bronze
+    description: Raw source rows as text, with lineage columns (_file_id, _row_number, _ingested_at).
+    tables:
+      - name: raw_customers
+      - name: raw_products
+      - name: raw_orders
+      - name: raw_order_items
+
+models:
+  - name: val_customers
+    description: All Bronze customer rows, de-duplicated (latest ingestion wins) and tagged with reject_reason (NULL means valid).
+  - name: val_products
+    description: Same pattern as val_customers, for products.
+  - name: val_orders
+    description: Same pattern, for orders. Also checks customer existence and order date vs. signup date.
+  - name: val_order_items
+    description: Same pattern, for order items. Also checks order and product existence.
+
+  - name: customers
+    description: Valid, de-duplicated customers.
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+      - name: email
+        data_tests: [not_null]
+      - name: signup_date
+        data_tests: [not_null, not_in_future]
+
+  - name: products
+    description: Valid, de-duplicated products.
+    columns:
+      - name: product_id
+        data_tests: [unique, not_null]
+      - name: category
+        data_tests: [not_null]
+      - name: unit_price
+        data_tests: [not_null, positive_value]
+
+  - name: orders
+    description: Valid orders whose customer exists and whose dates are consistent.
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: customer_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('customers')
+                field: customer_id
+      - name: order_date
+        data_tests: [not_null, not_in_future]
+      - name: status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['completed', 'cancelled', 'returned']
+
+  - name: order_items
+    description: Valid order items whose order and product exist.
+    columns:
+      - name: order_item_id
+        data_tests: [unique, not_null]
+      - name: order_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('orders')
+                field: order_id
+      - name: product_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('products')
+                field: product_id
+      - name: quantity
+        data_tests: [not_null, positive_value]
+      - name: unit_price
+        data_tests: [not_null, positive_value]
+
+  - name: rejected_records
+    description: Quarantine of every Bronze row excluded from Silver, with the reason. Rows are never deleted from Bronze.
+    columns:
+      - name: entity
+        data_tests: [not_null]
+      - name: reason
+        data_tests: [not_null]

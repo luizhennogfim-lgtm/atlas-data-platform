@@ -1,0 +1,83 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: One row per valid customer, with first/last completed order dates and order count.
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+  - name: dim_products
+    description: One row per valid product.
+    columns:
+      - name: product_id
+        data_tests: [unique, not_null]
+  - name: fct_orders
+    description: One row per valid order. order_total is the sum of its valid items (0 if none).
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: customer_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: customer_id
+      - name: order_total
+        data_tests: [not_null, non_negative]
+  - name: fct_order_items
+    description: One row per valid order item, enriched with order date, status and product category.
+    columns:
+      - name: order_item_id
+        data_tests: [unique, not_null]
+      - name: product_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_products')
+                field: product_id
+      - name: line_total
+        data_tests: [not_null, positive_value]
+  - name: daily_revenue
+    description: Revenue, orders, units and average order value per day (completed orders only).
+    columns:
+      - name: order_date
+        data_tests: [unique, not_null, not_in_future]
+      - name: revenue
+        data_tests: [not_null, positive_value]
+  - name: monthly_revenue
+    description: Revenue per month with month-over-month growth.
+    columns:
+      - name: month
+        data_tests: [unique, not_null]
+  - name: product_performance
+    description: Units, revenue and ranks per product (completed orders only).
+    columns:
+      - name: product_id
+        data_tests: [unique, not_null]
+      - name: revenue
+        data_tests: [non_negative]
+  - name: product_growth
+    description: Revenue of the last 90 days vs. the previous 90 days, per product.
+    columns:
+      - name: product_id
+        data_tests: [unique, not_null]
+  - name: category_growth
+    description: Revenue of the last 90 days vs. the previous 90 days, per category.
+    columns:
+      - name: category
+        data_tests: [unique, not_null]
+  - name: customer_retention
+    description: One row per customer with at least one completed order; flags repeat customers.
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+  - name: retention_summary
+    description: Single-row repeat purchase rate.
+    columns:
+      - name: repeat_purchase_rate
+        data_tests: [not_null]
+  - name: data_quality_summary
+    description: Rows received, valid, duplicate and invalid per entity.
+  - name: data_freshness
+    description: When Gold was built and the most recent order date it contains.
