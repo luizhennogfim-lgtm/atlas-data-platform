@@ -69,8 +69,8 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install Airflow with its official constraints
-        run: >
-          pip install "apache-airflow==2.10.5" "psycopg[binary]==3.2.3" pytest==9.2.0
+         run: >
+          pip install "apache-airflow==2.10.5" "psycopg[binary]==3.2.3" pytest
           --constraint https://raw.githubusercontent.com/apache/airflow/constraints-2.10.5/constraints-3.12.txt
       - run: airflow db migrate
       - run: pytest -q tests/test_dag.py
